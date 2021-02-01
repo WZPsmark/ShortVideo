@@ -8,13 +8,18 @@ import android.opengl.GLSurfaceView;
 import androidx.camera.core.Preview;
 import androidx.lifecycle.LifecycleOwner;
 
+import com.sk.skvideo.filter.BaseFilter;
 import com.sk.skvideo.filter.CameraFilter;
+import com.sk.skvideo.filter.FilterChain;
+import com.sk.skvideo.filter.FilterContext;
 import com.sk.skvideo.filter.ScreenFilter;
 import com.sk.skvideo.record.MediaRecorder;
 import com.sk.skvideo.utils.CameraHelper;
 import com.sk.skvideo.utils.Constant;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -31,9 +36,8 @@ public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOu
     private SurfaceTexture mCameraTexture;
     private int[] textures;
     private float[] mtx = new float[16];
-    private ScreenFilter screenFilter;
-    private CameraFilter cameraFilter;
     private MediaRecorder mRecorder;
+    private FilterChain filterChain;
 
 
     public CameraRender(CameraView cameraView) {
@@ -47,11 +51,8 @@ public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOu
     public void onDrawFrame(GL10 gl) {
         mCameraTexture.updateTexImage();
         mCameraTexture.getTransformMatrix(mtx);
-        cameraFilter.setTransformMatrix(mtx);
-        int id = cameraFilter.onDraw(textures[0]);
-        //....
-        id = screenFilter.onDraw(id);
-
+        filterChain.setTransformMatrix(mtx);
+        int id = filterChain.proceed(textures[0]);
         mRecorder.fireFrame(id, mCameraTexture.getTimestamp());
 
     }
@@ -75,9 +76,10 @@ public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOu
         mCameraTexture.setOnFrameAvailableListener(this);
 
         Context context = mCameraView.getContext();
-        cameraFilter = new CameraFilter(context);
-        screenFilter = new ScreenFilter(context);
-
+        List<BaseFilter> filters = new ArrayList<>();
+        filters.add(new CameraFilter(context));
+        filters.add(new ScreenFilter(context));
+        filterChain = new FilterChain(new FilterContext(), filters, 0);
         //录制视频的宽、高
         mRecorder = new MediaRecorder(mCameraView.getContext(), Constant.VIDEO_PATH,
                 EGL14.eglGetCurrentContext(),
@@ -87,16 +89,14 @@ public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOu
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        cameraFilter.setSize(width, height);
-        screenFilter.setSize(width, height);
+        filterChain.setSize(width, height);
     }
 
     /**
      * 资源释放
      */
     public void onSurfaceDestroyed() {
-        cameraFilter.release();
-        screenFilter.release();
+        filterChain.release();
     }
 
     /**

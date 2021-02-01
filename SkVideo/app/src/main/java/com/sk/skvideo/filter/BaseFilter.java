@@ -18,8 +18,6 @@ import java.nio.FloatBuffer;
 public class BaseFilter {
     FloatBuffer vertexBuffer; //顶点坐标缓存区
     FloatBuffer textureBuffer; // 纹理坐标
-    int mWidth;
-    int mHeight;
     int program;
     int vPosition;
     int vCoord;
@@ -62,25 +60,16 @@ public class BaseFilter {
         vTexture = GLES20.glGetUniformLocation(program, "vTexture");
     }
 
-    /**
-     * 设置尺寸
-     *
-     * @param width  宽
-     * @param height 高
-     */
-    public void setSize(int width, int height) {
-        mWidth = width;
-        mHeight = height;
-    }
 
     /**
      * 绘制
      *
      * @param texture 纹理
      */
-    public int onDraw(int texture) {
+    public int onDraw(int texture, FilterChain filterChain) {
+        FilterContext filterContext = filterChain.mFilterContext;
         //设置绘制区域
-        GLES20.glViewport(0, 0, mWidth, mHeight);
+        GLES20.glViewport(0, 0, filterContext.width, filterContext.height);
         GLES20.glUseProgram(program);
 
         vertexBuffer.position(0);
@@ -120,7 +109,7 @@ public class BaseFilter {
      * 资源释放
      */
     public void release() {
-
+        GLES20.glDeleteProgram(program);
     }
 
 

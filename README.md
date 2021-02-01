@@ -1,2 +1,2 @@
-# ShortVideo
-f仿抖音视频处理库
+# skVideo
+仿抖音视频处理库

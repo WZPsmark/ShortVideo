@@ -10,7 +10,7 @@ import com.sk.skvideo.R;
  * Time:2021/1/31
  * email:smarkwzp@163.com
  */
-public class CameraFilter extends BaseFboFilter {
+public class CameraFilter extends BaseFrameFilter {
     private float[] mtx;
     private int vMatrix;
 
@@ -35,7 +35,9 @@ public class CameraFilter extends BaseFboFilter {
         GLES20.glUniformMatrix4fv(vMatrix, 1, false, mtx, 0);
     }
 
-    public void setTransformMatrix(float[] mtx) {
-        this.mtx = mtx;
+    @Override
+    public int onDraw(int texture, FilterChain filterChain) {
+        mtx = filterChain.mFilterContext.cameraMtx;
+        return super.onDraw(texture, filterChain);
     }
 }
