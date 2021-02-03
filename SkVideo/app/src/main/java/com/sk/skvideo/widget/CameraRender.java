@@ -4,11 +4,13 @@ import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.GLSurfaceView;
+import android.os.Environment;
 
 import androidx.camera.core.Preview;
 import androidx.lifecycle.LifecycleOwner;
 
 import com.sk.skvideo.filter.BaseFilter;
+import com.sk.skvideo.filter.BigEyeFilter;
 import com.sk.skvideo.filter.CameraFilter;
 import com.sk.skvideo.filter.FilterChain;
 import com.sk.skvideo.filter.FilterContext;
@@ -16,6 +18,7 @@ import com.sk.skvideo.filter.ScreenFilter;
 import com.sk.skvideo.record.MediaRecorder;
 import com.sk.skvideo.utils.CameraHelper;
 import com.sk.skvideo.utils.Constant;
+import com.sk.skvideo.utils.OpenGLUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,8 +34,8 @@ import javax.microedition.khronos.opengles.GL10;
  * email:smarkwzp@163.com
  */
 public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOutputUpdateListener, SurfaceTexture.OnFrameAvailableListener {
-    private CameraView mCameraView;
-    private CameraHelper mCameraHelper;
+    private final CameraView mCameraView;
+    private final CameraHelper mCameraHelper;
     private SurfaceTexture mCameraTexture;
     private int[] textures;
     private float[] mtx = new float[16];
@@ -42,6 +45,8 @@ public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOu
 
     public CameraRender(CameraView cameraView) {
         this.mCameraView = cameraView;
+        OpenGLUtils.copyAssets2SdCard(cameraView.getContext(), "lbpcascade_frontalface.xml", Environment.getExternalStorageDirectory().getPath() + "lbpcascade_frontalface.xml");
+        OpenGLUtils.copyAssets2SdCard(cameraView.getContext(), "pd_2_00_pts5.dat", Environment.getExternalStorageDirectory().getPath() + "pd_2_00_pts5.dat");
         LifecycleOwner lifecycleOwner = (LifecycleOwner) cameraView.getContext();
         mCameraHelper = new CameraHelper(lifecycleOwner, this);
     }
@@ -52,6 +57,7 @@ public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOu
         mCameraTexture.updateTexImage();
         mCameraTexture.getTransformMatrix(mtx);
         filterChain.setTransformMatrix(mtx);
+        filterChain.setFace(mCameraHelper.getFace());
         int id = filterChain.proceed(textures[0]);
         mRecorder.fireFrame(id, mCameraTexture.getTimestamp());
 
@@ -78,6 +84,7 @@ public class CameraRender implements GLSurfaceView.Renderer, Preview.OnPreviewOu
         Context context = mCameraView.getContext();
         List<BaseFilter> filters = new ArrayList<>();
         filters.add(new CameraFilter(context));
+        filters.add(new BigEyeFilter(context));
         filters.add(new ScreenFilter(context));
         filterChain = new FilterChain(new FilterContext(), filters, 0);
         //录制视频的宽、高

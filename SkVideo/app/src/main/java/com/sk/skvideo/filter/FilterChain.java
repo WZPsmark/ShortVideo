@@ -1,5 +1,7 @@
 package com.sk.skvideo.filter;
 
+import com.sk.skvideo.face.Face;
+
 import java.util.List;
 
 /**
@@ -72,9 +74,14 @@ public class FilterChain {
         mFilterContext.setTransformMatrix(mtx);
     }
 
-//    public void setFace(Face face) {
-//        mFilterContext.setFace(face);
-//    }
+    /**
+     * 设置人脸信息
+     *
+     * @param face Face
+     */
+    public void setFace(Face face) {
+        mFilterContext.setFace(face);
+    }
 
     /**
      * 任务资源释放
